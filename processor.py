@@ -4,7 +4,7 @@ from PIL import Image, ImageDraw, ImageFont
 
 # process and format all info into an image
 def process(name, song, album, artist, current, total, user, cover):
-    print(f'{name} is listening to {song} by {artist} on {album}.')
+    print(f'{name} слушает {song} испольнителя {artist} на {album}.')
 
     #input
     user = Image.open(BytesIO(user.content))

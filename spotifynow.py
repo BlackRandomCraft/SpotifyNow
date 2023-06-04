@@ -9,9 +9,9 @@ def link(update, context):
     'add new user'
     if update.effective_chat.type != update.effective_chat.PRIVATE:
         button = InlineKeyboardMarkup([[InlineKeyboardButton(text="Link",url="t.me/spotifynowbot")]])
-        update.effective_message.reply_text("Contact me in private chat to link your Spotify account.", reply_markup=button)
+        update.effective_message.reply_text("Свяжитесь со мной в личном чате, чтобы связать вашу учетную запись Spotify.", reply_markup=button)
         return ConversationHandler.END
-    message = "I'm gonna need some information for linking your Spotify account. Tell me, what should I call you?"
+    message = "Мне понадобится информация для привязки вашей учетной записи Spotify. Скажите, как мне Вас называть?"
     update.effective_message.reply_text(message, parse_mode=ParseMode.MARKDOWN)
     return USERNAME
 
@@ -19,8 +19,8 @@ def getusername(update, context):
     'save username and id'
     username = update.effective_message.text.strip()
     sql.add_user(update.effective_user.id, username)
-    message = "Next up is Authorization. I need permissions to see what you're listening to."
-    button = InlineKeyboardMarkup([[InlineKeyboardButton(text="Authorize", url=authlink)]])
+    message = "Следующий пункт - авторизация. Мне нужны разрешения, чтобы видеть, что вы слушаете.."
+    button = InlineKeyboardMarkup([[InlineKeyboardButton(text="Авторизоваться", url=authlink)]])
     update.effective_message.reply_text(message, reply_markup=button)
     return ConversationHandler.END
 
@@ -28,21 +28,21 @@ def relink(update, context):
     'update stored token'
     if update.effective_chat.type != update.effective_chat.PRIVATE:
         button = InlineKeyboardMarkup([[InlineKeyboardButton(text="Link",url="t.me/spotifynowbot")]])
-        update.effective_message.reply_text("Contact me in private chat to link your Spotify account.", reply_markup=button)
+        update.effective_message.reply_text("Свяжитесь со мной в личном чате, чтобы связать вашу учетную запись Spotify.", reply_markup=button)
         return
     if not sql.get_user(update.effective_user.id): 
-        update.effective_message.reply_text("You need to /link before using this function.")
+        update.effective_message.reply_text("Перед использованием этой функции необходимо установить /link.")
         return
-    message = "Tap the button below to authorize."
-    button = InlineKeyboardMarkup([[InlineKeyboardButton(text="Authorize", url=authlink)]])
+    message = "Нажмите кнопку ниже для авторизации."
+    button = InlineKeyboardMarkup([[InlineKeyboardButton(text="Авторизоваться", url=authlink)]])
     update.effective_message.reply_text(message, reply_markup=button)
     return
 
 def unlink(update, context):
     'remove user from db'
     sql.del_user(update.effective_user.id)
-    print(update.message.from_user.username+' just unlinked their account.')
-    message = "You've been unlinked from my database. You can disable the authorization from your [Account's Apps Overview](https://www.spotify.com/us/account/apps/) section."
+    print(update.message.from_user.username+' только что отвязал их аккаунт.')
+    message = "Вы были отсоединены от моей базы данных. Вы можете отключить авторизацию в разделе [Обзор приложений учетной записи](https://www.spotify.com/us/account/apps/)."
     update.message.reply_text(message, parse_mode=ParseMode.MARKDOWN)
 
 def code(text):
@@ -60,27 +60,27 @@ def start(update, context):
     'handle start command with deep linking'
     text = update.effective_message.text
     if len(text) <= 7:
-        update.message.reply_text("Hi! I'm SpotifyNow and I you flex what you're listening to on Spotify. Tap /now to get started.")
+        update.message.reply_text("Привет! Я SpotifyNow, и я показываю, что вы слушаете на Spotify. Нажмите /now, чтобы начать.")
     elif text.endswith('link'):
-        update.message.reply_text("Hi! I'm SpotifyNow and I you flex what you're listening to on Spotify. Tap /link to connect your account.")
+        update.message.reply_text("Привет! Я SpotifyNow, и я показываю, что вы слушаете на Spotify. Нажмите /link, чтобы подключить учетную запись.")
     elif text.endswith('relink'):
-        update.message.reply_text("Spotify isn't letting me see what you're listening to! Try to /relink your Spotify account.")
+        update.message.reply_text("Spotify не позволяет мне видеть, что вы слушаете! Попробуйте выполнить /relink вашей учетной записи Spotify.")
     elif text.endswith('notsure'):
-        update.message.reply_text("I'm not sure what you're listening to.")
+        update.message.reply_text("Я не уверен, что вы слушаете.")
     elif text.endswith('ads'):
-        update.message.reply_text("Ads. You're listening to those annoying ads!")
+        update.message.reply_text("Реклама. Вы слушаете эти нудные объявления!")
     elif text.endswith('notlistening'):
-        update.message.reply_text("You're not listening to anything on Spotify at the moment.")
+        update.message.reply_text("В данный момент вы ничего не слушаете на Spotify.")
     else:
         try: 
             data = {'grant_type':'authorization_code','code':code(text),'redirect_uri':redirect_uri,'client_id':client_id,'client_secret':client_secret}
             authtoken = requests.post('https://accounts.spotify.com/api/token', data=data).json()['refresh_token']
         except: 
-            update.message.reply_text(f'Something went wrong. Try to /relink your account.')
+            update.message.reply_text(f'Что-то пошло не так. Попробуйте перепривязать (/relink) свою учетную запись.')
         else:
             sql.add_token(authtoken, update.effective_user.id)
-            print(update.message.from_user.username+' just linked their account.')
-            message = "Yay! Your Spotify account is now linked. Tap /now anytime to flex what you're listening to. You can also use the inline mode by typing @SpotifyNowBot in any chat."
+            print(update.message.from_user.username+' только что связали свой аккаунт.')
+            message = "Ура! Ваша учетная запись Spotify теперь подключена. Нажмите /now в любое время, чтобы изменить то, что вы слушаете. Вы также можете использовать режим вставки, набрав @SpotifyNowBot в любом чате."
             update.message.reply_text(message)
     update.effective_message.delete()
 
@@ -108,7 +108,7 @@ def nowplaying(update, context):
         uid = update.message.from_user.id
         authtoken = list(sql.get_user(uid)[0])[2]
     except: 
-        update.message.reply_text('You need to /link your Spotify account with me first.')
+        update.message.reply_text('Сначала вам нужно связать (/link) свой аккаунт Spotify со мной.')
         return
     try: 
         data = {
@@ -120,7 +120,7 @@ def nowplaying(update, context):
         }
         token = requests.post('https://accounts.spotify.com/api/token', data=data).json()
     except:
-        update.message.reply_text('Something went wrong. Try to /relink your account.')
+        update.message.reply_text('Что-то пошло не так. Попробуйте выполнить /relink вашей учетной записи.')
         return
     try: 
         headers = {
@@ -130,15 +130,15 @@ def nowplaying(update, context):
         }
         r = requests.get('https://api.spotify.com/v1/me/player/currently-playing', headers=headers).json()
         if   r['currently_playing_type'] == 'ad': 
-            update.message.reply_text("Ads. You're listening to those annoying ads.")
+            update.message.reply_text("Реклама. Вы слушаете эти нудные объявления.")
         elif r['currently_playing_type'] == 'track':
-            button = InlineKeyboardButton(text="Play on Spotify", url=r['item']['external_urls']['spotify'])
+            button = InlineKeyboardButton(text="Слушать на Spotify", url=r['item']['external_urls']['spotify'])
             context.bot.send_photo(update.message.chat_id, getpic(r, uid, context), reply_markup=InlineKeyboardMarkup([[button]]))
         else: 
-            update.message.reply_text("I'm not sure what you're listening to.")
+            update.message.reply_text("Я не уверен, что вы слушаете.")
     except Exception as e: 
         print(e)
-        update.message.reply_text("You're not listening to anything on Spotify at the moment.")
+        update.message.reply_text("В данный момент вы ничего не слушаете на Spotify.")
 
 def sstats(update, context):
     'returns the number of registered users, devs only'
@@ -146,7 +146,7 @@ def sstats(update, context):
         userlist = sql.list_users()
         update.message.reply_text(f'{len(userlist)} Users')
     else: 
-        update.effective_message.reply_text("This is a developer restricted command.\nYou don't have permissions to access this.")
+        update.effective_message.reply_text("Это команда, ограниченная разработчиком.\nУ вас нет прав доступа к этой команде.")
 
 def cancel(update, context):
     update.message.reply_text('Canceled.')
@@ -163,7 +163,7 @@ def inlinenow(update, context):
     except: 
         update.inline_query.answer(
             results=[], 
-            switch_pm_text='Connect your Spotify account.',
+            switch_pm_text='Подключите свою учетную запись Spotify.',
             switch_pm_parameter='link', 
             cache_time=0
         )
@@ -180,7 +180,7 @@ def inlinenow(update, context):
     except:
         update.inline_query.answer(
             results=[], 
-            switch_pm_text="Something's wrong. Lets fix it.", 
+            switch_pm_text="Что-то не так. Давайте исправим это.", 
             switch_pm_parameter='relink', 
             cache_time=0
         )
@@ -193,9 +193,9 @@ def inlinenow(update, context):
         }
         r = requests.get('https://api.spotify.com/v1/me/player/currently-playing', headers=headers).json()
         if   r['currently_playing_type'] == 'ad': 
-            update.inline_query.answer([], switch_pm_text="You're listening to annoying ads.", switch_pm_parameter='ads', cache_time=0)
+            update.inline_query.answer([], switch_pm_text="Вы слушаете эти нудные объявления.", switch_pm_parameter='ads', cache_time=0)
         elif r['currently_playing_type'] == 'track':
-            button = InlineKeyboardButton(text="Play on Spotify", url=r['item']['external_urls']['spotify'])
+            button = InlineKeyboardButton(text="Слушать на Spotify", url=r['item']['external_urls']['spotify'])
             image   = getpic(r, uid, context)
             dump    = context.bot.send_photo(dumpchannel, photo=image)
             photo   = dump['photo'][1]['file_id']
@@ -210,15 +210,15 @@ def inlinenow(update, context):
                 ], cache_time=0
             )
         else: 
-            update.inline_query.answer([], switch_pm_text="Not sure what you're listening to.", switch_pm_parameter='notsure', cache_time=0)
+            update.inline_query.answer([], switch_pm_text="Не уверен, что вы слушаете.", switch_pm_parameter='notsure', cache_time=0)
     except Exception as e: 
         print(e)
-        update.inline_query.answer([], switch_pm_text="You're not listening to anything.", switch_pm_parameter='notlistening', cache_time=0)
+        update.inline_query.answer([], switch_pm_text="Вы ничего не слушаете.", switch_pm_parameter='notlistening', cache_time=0)
 
 helptext = '''
-Tap /now to share what you're listening to on Spotify. You can also use the inline mode by typing @SpotifyNowBot in any chat.\n
-If you're new, you need to /link your account to get started. You can always /unlink it whenever you feel like.\n
-If you're facing errors, try restarting Spotify. No good? Send /cancel followed by /relink and if the issue persists, report it to @notdedsec.\n'''
+Нажмите /now, чтобы поделиться тем, что вы слушаете на Spotify. Вы также можете использовать режим вставки, набрав @SpotifyNowBot в любом чате.\n
+Если вы новичок, вам нужно /link свой аккаунт, чтобы начать работу. Вы всегда можете отключить (/unlink) его, когда захотите.\n
+Если вы столкнулись с ошибками, попробуйте перезапустить Spotify. Не получается? Отправьте /cancel, а затем /relink, и если проблема не исчезнет, сообщите о ней @notdedsec.\n'''
 
 if __name__ == "__main__": 
     if not os.path.exists('spotifynow.db'): 
